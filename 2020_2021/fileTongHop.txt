@@ -1,0 +1,349 @@
+Câu 1:
+<form action="./themKhachHangPage.php" method="POST">
+    <h3>Thêm khách hàng</h3>
+    <table>
+        <tbody>
+            <tr>
+                <td>Mã khách hàng</td>
+                <td><input type="text" name="maKH"></td>
+            </tr>
+            <tr>
+                <td>Họ tên khách hàng</td>
+                <td><input type="text" name="tenKH"></td>
+            </tr>
+            <tr>
+                <td>Địa chỉ</td>
+                <td><input type="text" name="diaChi"></td>
+            </tr>
+            <tr>
+                <td>Điện thoại</td>
+                <td><input type="text" name="sdt"></td>
+            </tr>
+        </tbody>
+    </table>
+    <input type="submit" value="Thêm" name="them">
+</form>
+
+<?php
+if (isset($_POST['them'])) {
+    $maKH = $_POST['maKH'];
+    $tenKH = $_POST['tenKH'];
+    $diaChi = $_POST['diaChi'];
+    $sdt = $_POST['sdt'];
+    include './connect.php';
+    $conn->query("INSERT INTO KHACHHANG VALUES ('$maKH', '$tenKH', '$diaChi', '$sdt')");
+    $conn->close();
+}
+?>
+
+Câu 2:
+<form action="./themThongTinXeKhachHangPage.php" method="POST">
+    <h3>Thêm thông tin xe khách hàng</h3>
+    <table>
+        <tbody>
+            <tr>
+                <td>Họ tên khách hàng</td>
+                <td>
+                    <select name="maKH" id="maKH">
+                        <?php
+                        include './connect.php';
+                        $res = $conn->query("SELECT MAKH, HOTENKH FROM KHACHHANG");
+                        if ($res->num_rows > 0) {
+                            while ($row = $res->fetch_row()) {
+                                echo "<option value='$row[0]'>$row[1]</option>";
+                            }
+                        }
+                        $conn->close();
+                        ?>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>Số xe</td>
+                <td>
+                    <input type="text" name="soXe">
+                </td>
+            </tr>
+            <tr>
+                <td>Hãng xe</td>
+                <td>
+                    <input type="text" list="options" placeholder="Chọn hoặc nhập..." name="hangXe">
+                    <datalist id="options">
+                        <option value="Toyota">
+                        <option value="BMW">
+                        <option value="Audi">
+                    </datalist>
+                </td>
+            </tr>
+            <tr>
+                <td>Năm sản xuất</td>
+                <td>
+                    <input type="number" name="namSanXuat">
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <input type="submit" name="them" value="Thêm">
+
+</form>
+
+<?php
+if (isset($_POST['them'])) {
+    include './connect.php';
+    $maKH = $_POST['maKH'];
+    $soXe = $_POST['soXe'];
+    $hangXe = $_POST['hangXe'];
+    $namSanXuat = $_POST['namSanXuat'];
+    $conn->query("INSERT INTO XE VALUES('$soXe', '$hangXe', $namSanXuat, '$maKH')");
+    $conn->close();
+}
+?>
+
+Câu 3:
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+</head>
+
+<body>
+    <h3>Thêm bảo dưỡng</h3>
+    <table>
+        <tbody>
+            <tr>
+                <td>Số xe</td>
+                <td>
+                    <input type="text" id="soXe">
+                </td>
+            </tr>
+            <tr>
+                <td>Họ tên khách</td>
+                <td>
+                    <input type="text" id="tenKH">
+                </td>
+            </tr>
+            <tr>
+                <td>Mã bảo dưỡng</td>
+                <td>
+                    <input type="text" id="maBaoDuong">
+                </td>
+            </tr>
+            <tr>
+                <td>Số KM</td>
+                <td>
+                    <input type="text" id="soKM">
+                </td>
+            </tr>
+            <tr>
+                <td>Nội dung</td>
+                <td>
+                    <input type="text" id="noiDung">
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <button id="themButton">Thêm</button>
+
+    <div id="thongbao"></div>
+
+    <script>
+        $('#soXe').change(function() {
+            let soXe = $(this).val();
+            $.post('layTenKHquaSoXe.php', {
+                soXe: soXe
+            }, function(data, status) {
+                if (status === 'success') {
+                    $('#tenKH').val(data);
+                }
+            })
+        })
+
+        $('#themButton').click(function() {
+            let soXe = $("#soXe").val();
+            let hoTenKH = $('#tenKH').val();
+            let maBaoDuong = $('#maBaoDuong').val();
+            let soKM = $('#soKM').val();
+            let noiDung = $('#noiDung').val();
+
+            $.post('themBaoDuong.php', {
+                soXe: soXe,
+                maBaoDuong: maBaoDuong,
+                soKM: soKM,
+                noiDung: noiDung
+            }, function(data, status) {
+                if (status === 'success') {
+                    $('#thongbao').html('<strong>Thêm thành công</strong>')
+                } else $('#thongbao').html('Thêm thất bại')
+            })
+
+        })
+    </script>
+</body>
+
+layTenKHquaSoXe.php
+<?php
+if ($_POST['soXe']) {
+    $soXe = $_POST['soXe'];
+    include './connect.php';
+    $res = $conn->query("SELECT k.HOTENKH
+        FROM XE x, KHACHHANG k
+        WHERE x.makh=k.makh
+        AND x.soxe='$soXe'");
+    while ($row = $res->fetch_row()) {
+        echo $row[0];
+    }
+    $conn->close();
+}
+
+themBaoDuong.php
+<?php
+$soXe = $_POST['soXe'];
+$maBaoDuong = $_POST['maBaoDuong'];
+$soKM = $_POST['soKM'];
+$noiDung = $_POST['noiDung'];
+$ngayNhan = date("Y-m-d");
+
+include './connect.php';
+$conn->query("INSERT INTO BAODUONG VALUES('$maBaoDuong', '$ngayNhan', null, $soKM, '$noiDung', '$soXe', null)");
+$conn->close();
+
+Câu 4:
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+</head>
+
+<body>
+    <h3>Thanh toán</h3>
+    <table>
+        <tbody>
+            <tr>
+                <td>
+                    Số xe <select type="text" id="soXe">
+
+                    </select>
+                </td>
+                <td>
+                    <table>
+                        <tr>
+                            <td>Ngày nhận xe</td>
+                            <td><input type="date" id="ngayNhanXe"></td>
+                        </tr>
+                        <tr>
+                            <td>Thành tiền</td>
+                            <td><input type="number" id="thanhTien"></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Tên công việc</th>
+                <th>Đơn giá</th>
+                <th>Chức năng</th>
+            </tr>
+        </thead>
+        <tbody id="danhSachCongViec">
+
+        </tbody>
+    </table>
+    <button onclick="handleThanhToan()">Thanh toán</button>
+
+    <script>
+        function tinhTongTien() {
+            let tongTien = 0;
+            $('#danhSachCongViec tr').each(function() {
+                var soTien = parseFloat($(this).children().eq(1).text());
+                tongTien += isNaN(soTien) ? 0 : soTien;
+            })
+            $('#thanhTien').val(tongTien);
+            return tongTien;
+        }
+
+        $.get('laySoXeDeXemChiTietBaoDuong.php', function(data, status) {
+            if (status === 'success') {
+                $('#soXe').html(data);
+
+                $('#soXe').change(function() {
+                    let ngayNhanXe = $('#ngayNhanXe').val();
+                    $.post('layCongViecTheoSoXeNgayNhanXe.php', {
+                        soXe: $('#soXe').val(),
+                        ngayNhanXe: ngayNhanXe,
+                    }, function(data, status) {
+                        if (status === "success") {
+                            $('#danhSachCongViec').html(data);
+                            tinhTongTien();
+
+                            $('.btnXoa').click(function() {
+                                let maCV = $(this).attr("maCV");
+                                $(this).parent().parent().remove();
+                                tinhTongTien();
+                                $.post('xoaChiTietCVTheoMaCV.php', {
+                                    maCV: maCV
+                                }, function(data, status) {
+                                    if (status === 'success') {
+                                        checkStatus = true;
+                                    }
+                                })
+                            })
+                        }
+                    })
+                })
+            }
+        })
+
+        function handleThanhToan() {
+            let tongTien = tinhTongTien();
+            let soXe = $('#soXe').val();
+            $.post('handleThanhToan.php', {
+                tongTien: tongTien,
+                soXe: soXe
+            }, function(data, status) {})
+        }
+    </script>
+</body>
+
+laySoXeDeXemChiTietBaoDuong.php
+<?php
+include './connect.php';
+$res = $conn->query("SELECT SOXE FROM XE");
+echo "<option value=''>----Chọn số xe----</option>";
+while ($row = $res->fetch_row()) {
+    echo "<option value='$row[0]'>$row[0]</option>";
+}
+$conn->close();
+
+layCongViecTheoSoXeNgayNhanXe.php
+<?php
+$soXe = $_POST['soXe'];
+$ngayNhanXe = $_POST['ngayNhanXe'];
+include './connect.php';
+$res = $conn->query("SELECT CV.TENCV, CV.DONGIA, CV.MACV
+    FROM BAODUONG BD, CONGVIEC CV, CT_BD CT
+    WHERE BD.MABD=CT.MABD AND CV.MACV=CT.MACV
+    AND BD.SOXE='$soXe' AND BD.NGAYNHAN='$ngayNhanXe'");
+while ($row = $res->fetch_row()) {
+    echo "<tr>
+        <td>$row[0]</td>
+        <td>$row[1]</td>
+        <td><button class='btnXoa' maCV='$row[2]'>Xóa</button></td>
+    </tr>";
+}
+$conn->close();
+
+xoaChiTietCVTheoMaCV.php
+<?php
+$maCV = $_POST['maCV'];
+include './connect.php';
+$conn->query("DELETE FROM CT_BD WHERE MACV='$maCV'");
+$conn->close();
+
+handleThanhToan.php
+<?php
+$ngayTra = date("Y-m-d");
+$thanhTien = $_POST['tongTien'];
+$soXe = $_POST['soXe'];
+include './connect.php';
+$conn->query("UPDATE BAODUONG SET THANHTIEN=$thanhTien, NGAYTRA='$ngayTra' WHERE SOXE='$soXe'");
+$conn->close();

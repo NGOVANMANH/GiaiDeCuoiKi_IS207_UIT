@@ -1,0 +1,301 @@
+Câu 1:
+<form action="addTour.php" method="post">
+    <label for="maTour">Mã tour</label>
+    <input type="number" name="maTour" id="maTour">
+    <br>
+    <label for="tenTour">Tên tour</label>
+    <input type="text" name="tenTour" id="tenTour">
+    <br>
+    <label for="ngayKhoiHanh">Ngày khởi hành</label>
+    <input type="date" name="ngayKhoiHanh" id="ngayKhoiHanh">
+    <br>
+    <label for="soNgay">Số ngày</label>
+    <input type="number" name="soNgay" id="soNgay">
+    <br>
+    <label for="soDem">Số đêm</label>
+    <input type="number" name="soDem" id="soDem">
+    <br>
+    <label for="gia">Giá</label>
+    <input type="number" name="gia" id="gia">
+    <br>
+    <input type="submit" name="addTour" value="Thêm" />
+</form>
+
+<?php
+include './connect.php';
+if (isset($_POST['addTour']) && ($_POST['addTour'] == "Thêm")) {
+    $maTour = $_POST['maTour'];
+    $tenTour = $_POST['tenTour'];
+    $ngayKhoiHanh = $_POST['ngayKhoiHanh'];
+    $soNgay = $_POST['soNgay'];
+    $soDem = $_POST['soDem'];
+    $gia = $_POST['gia'];
+
+    $conn->query("INSERT INTO TOUR VALUES
+    ('$maTour', '$tenTour', '$ngayKhoiHanh', $soNgay, $soDem, $gia)");
+}
+$conn->close();
+?>
+
+Câu 2:
+<form action="./themDiemDuLich.php" method="post">
+    <label for="maTP">Tên thành phố</label>
+    <select name="maTP" id="maTP">
+        <?php
+        include './connect.php';
+        $results = $conn->query("SELECT * FROM TINHTP");
+        if ($results->num_rows > 0) {
+            while ($row = $results->fetch_row()) {
+                echo "<option value='$row[0]'>$row[1]</option>";
+            }
+        }
+        $conn->close();
+        ?>
+    </select>
+    <br>
+    <label for="maDDL">Mã điểm du lịch</label>
+    <input type="number" name="maDDL" id="maDDL">
+    <br>
+    <label for="tenDDL">Tên điểm du lịch</label>
+    <input type="text" name="tenDDL" id="tenDDL">
+    <br>
+    <label for="dacTrung">Đặt trưng</label>
+    <input type="text" name="dacTrung" id="dacTrung">
+    <br>
+    <input type="submit" name="addDDL" value="Thêm">
+</form>
+
+<?php
+if (isset($_POST['addDDL']) && ($_POST['addDDL'] == "Thêm")) {
+    $maTP = $_POST['maTP'];
+    $maDDL = $_POST['maDDL'];
+    $tenDDL = $_POST['tenDDL'];
+    $dacTrung = $_POST['dacTrung'];
+
+    include './connect.php';
+    $conn->query("INSERT INTO DIEMDL VALUES ('$maDDL', '$tenDDL', '$maTP', '$dacTrung')");
+    $conn->close();
+}
+?>
+
+Câu 3:
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+</head>
+
+<table border="1" cellspacing="0">
+    <thead>
+        <tr>
+            <th>STT</th>
+            <th>Mã điểm du lịch</th>
+            <th>Tên điểm du lịch</th>
+            <th>Tên thành phố</th>
+            <th>Đặc trưng</th>
+            <th>Chức năng</th>
+        </tr>
+    </thead>
+    <tbody id="danhSachDiemDuLich">
+
+    </tbody>
+
+
+</table>
+
+<div id="thongBao"></div>
+<div id="chiTietDiemDuLich">
+    Mã điểm du lịch <input type='text' id='maDDL' /><br>
+    Tên điểm du lịch <input type='text' id="tenDDL" /><br>
+    Tên thành phố
+    <select id='maTTP'>
+        <?php
+        include './connect.php';
+        $res = $conn->query("SELECT * FROM TINHTP");
+        while ($row = $res->fetch_row()) {
+            echo "<option value='$row[0]'>$row[1]</option>";
+        }
+        $conn->close();
+        ?>
+    </select><br>
+    Đặc trưng <input type='text' id="dacTrung" /><br>
+    <button id='btnUpdate'>Cập nhật</button>
+</div>
+
+<script>
+    $('#chiTietDiemDuLich').hide();
+    $.get('lietKeDiemDuLich.php', function(data, status) {
+        if (status === 'success') {
+            $('#danhSachDiemDuLich').html(data);
+
+            $('.btnView').click(function() {
+                const maDDL = $(this).attr("maDDL");
+                $.post('layDiemDuLichTheoMa.php', {
+                    maDDL: maDDL
+                }, function(data, status) {
+                    if (status === 'success') {
+                        $('#chiTietDiemDuLich').show();
+                        const _data = JSON.parse(data)[0];
+                        $('#maDDL').val(_data.MaDDL);
+                        $('#tenDDL').val(_data.TenDDL);
+                        $('#maTTP').val(_data.MaTTP);
+                        $('#dacTrung').val(_data.Dactrung);
+                    }
+                })
+            })
+
+            $('.btnDelete').click(function() {
+                const maDDL = $(this).attr("maDDL");
+                $(this).parent().parent().remove();
+                $.post('xoaDiemDuLich.php', {
+                    maDDL: maDDL
+                }, function(data, status) {
+                    if (status === 'success') {
+                        $('#thongBao').html("Xóa thành công!");
+                    }
+                })
+            })
+        }
+    })
+
+    $('#btnUpdate').click(function() {
+        let maDDL = $('#maDDL').val();
+        let tenDDL = $('#tenDDL').val();
+        let maTTP = $('#maTTP').val();
+        let dacTrung = $('#dacTrung').val();
+
+        console.log(maDDL, tenDDL, maTTP, dacTrung);
+
+        $.post('capNhatDDL.php', {
+            maDDL: maDDL,
+            tenDDL: tenDDL,
+            maTTP: maTTP,
+            dacTrung: dacTrung,
+        }, function(data, status) {
+            if (status === 'success') {
+                $("#thongBao").html("Cập nhật thành công");
+            }
+        })
+    })
+</script>
+
+lietKeDiemDuLich.php
+<?php
+include './connect.php';
+$res = $conn->query("SELECT D.MADDL, D.TENDDL, T.TENTTP, D.DACTRUNG FROM DIEMDL D, TINHTP T WHERE D.MATTP=T.MATTP");
+$stt = 0;
+while ($row = $res->fetch_row()) {
+    echo "<tr>";
+    echo "<td>" . ++$stt . "</td>";
+    echo "<td>$row[0]</td>";
+    echo "<td>$row[1]</td>";
+    echo "<td>$row[2]</td>";
+    echo "<td>$row[3]</td>";
+    echo "<td><button class='btnView' maDDL='$row[0]'>View</button><button class='btnDelete' maDDL='$row[0]'>Delete</button></td>";
+    echo "</tr>";
+}
+$conn->close();
+
+layDiemDuLichTheoMa.php
+<?php
+include './connect.php';
+$maDDL = $_POST['maDDL'];
+$res = $conn->query("SELECT * FROM DIEMDL WHERE MADDL='$maDDL'");
+$response = array();
+while ($row = $res->fetch_assoc()) {
+    $response[] = $row;
+}
+echo json_encode($response);
+$conn->close();
+
+xoaDiemDuLich.php
+<?php
+include './connect.php';
+if ($_POST['maDDL']) {
+    $maDDL = $_POST['maDDL'];
+    $conn->query("DELETE FROM CHITIET WHERE MADDL='$maDDL'");
+    $conn->query("DELETE FROM DIEMDL WHERE MADDL='$maDDL'");
+}
+$conn->close();
+
+capNhatDDL.php
+<?php
+include './connect.php';
+$maDDL = $_POST['maDDL'];
+$tenDDL = $_POST['tenDDL'];
+$maTTP = $_POST['maTTP'];
+$dacTrung = $_POST['dacTrung'];
+
+$conn->query("UPDATE DIEMDL SET TENDDL='$tenDDL', MATTP='$maTTP', DACTRUNG='$dacTrung' WHERE MADDL='$maDDL'");
+$conn->close();
+
+Câu 4:
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+</head>
+
+<body>
+    <div>
+        Số điểm du lịch đi qua <input type="number" id="soDiemDuLich">
+    </div>
+    <div>
+        Số điểm du lịch mà Các tour đi qua
+        <table border="1" cellspacing='0'>
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Tên tour</th>
+                    <th>Số điểm du lịch</th>
+                </tr>
+            </thead>
+            <tbody id="danhSachDiemDuLich">
+
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        $('#soDiemDuLich').keydown(function(e) {
+            if (e.key === 'Tab') {
+                const soDiemDuLich = +$(this).val();
+                $.post('soDiemDuLichDiQua.php', {
+                    soDiemDuLich: soDiemDuLich,
+                }, function(data, status) {
+                    if (status === 'success') {
+                        console.log($('#danhSachDiemDuLich'))
+                        $('#danhSachDiemDuLich').html(data);
+                    }
+                })
+            }
+        })
+    </script>
+</body>
+
+soDiemDuLichDiQua.php
+<?php
+include './connect.php';
+
+if (isset($_POST['soDiemDuLich'])) {
+    $soDiemDuLich = $_POST['soDiemDuLich'];
+    $sql = "SELECT * 
+    FROM
+    (
+        SELECT t.TenTour, COUNT(ddl.MaDDL) as SLDDL 
+        FROM tour t 
+        JOIN chitiet ct ON t.MaTour=ct.MaTour 
+        JOIN diemdl ddl ON ddl.MaDDL=ct.MaDDL
+        GROUP BY t.TenTour
+    ) AS subquery
+    WHERE subquery.SLDDL >= $soDiemDuLich";
+
+    $rows = $conn->query($sql);
+
+    $stt = 0;
+    while ($row = $rows->fetch_row()) {
+        echo "<tr>";
+        echo "<td>" . ++$stt . "</td>";
+        echo "<td>$row[0]</td>";
+        echo "<td>$row[1]</td>";
+        echo "</tr>";
+    }
+}
+
+$conn->close();
